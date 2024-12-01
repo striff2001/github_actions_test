@@ -12,10 +12,10 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]  # Поддерживаемые ОС
-        python-version: [3.10, 3.11, 3.12]  # Поддерживаемые версии Python
+        python-version: [3.8, 3.9, 3.10]  # Поддерживаемые версии Python
         include:
           - os: macos-latest
-            python-version: 3.12
+            python-version: 3.9
             architecture: arm64  # Для Apple Silicon
     steps:
       # Установить код репозитория
@@ -46,7 +46,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: [3.10, 3.11, 3.12]
+        python-version: [3.8, 3.9, 3.10]
     steps:
       # Установить код репозитория
       - name: Checkout code
@@ -90,7 +90,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.12
+          python-version: 3.9
 
       # Установить зависимости
       - name: Install dependencies
