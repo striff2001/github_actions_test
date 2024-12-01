@@ -32,7 +32,6 @@ jobs:
         with:
           python-version: "${{ matrix.python-version }}"
           architecture: ${{ matrix.architecture || 'x64' }}
-          cache: 'false'  # Отключение кеширования для избежания конфликтов
 
       - name: Debug Python Environment
         run: |
