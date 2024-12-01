@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main  # Запуск workflow при пуше в ветку main
+      - main  # Trigger on push to main
 
 jobs:
   build:
@@ -16,12 +16,13 @@ jobs:
         include:
           - os: macos-latest
             python-version: "3.9"
-            architecture: arm64
+            architecture: arm64  # For Apple Silicon
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies for macOS
+      # Install dependencies for macOS
+      - name: Install gettext for macOS
         if: runner.os == 'macOS'
         run: |
           brew install gettext
@@ -46,18 +47,19 @@ jobs:
       - name: Verify build
         run: |
           python -m compileall .
+
   test:
     name: Run Unit Tests
     runs-on: ${{ matrix.os }}
-    needs: build  # Выполняется после успешного завершения стадии build
+    needs: build  # Run after successful build
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.8", "3.9", "3.10"]  # Указаны как строки
+        python-version: ["3.8", "3.9", "3.10"]
         include:
           - os: macos-latest
             python-version: "3.9"
-            architecture: arm64  # Для Apple Silicon
+            architecture: arm64  # For Apple Silicon
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -73,7 +75,6 @@ jobs:
         with:
           python-version: "${{ matrix.python-version }}"
           architecture: ${{ matrix.architecture || 'x64' }}
-          cache: 'false'  # Отключение кеширования для избежания конфликтов
 
       - name: Debug Python Environment
         run: |
@@ -99,7 +100,7 @@ jobs:
   deploy:
     name: Demonstrate Deployment
     runs-on: ubuntu-latest
-    needs: test  # Выполняется после успешного завершения стадии test
+    needs: test  # Run after successful tests
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -119,6 +120,6 @@ jobs:
           FLASK_APP: app.py
         run: |
           nohup python app.py > flask.log 2>&1 &
-          sleep 5  # Дать приложению время запуститься
+          sleep 5  # Give the app time to start
           RESPONSE=$(curl -s http://127.0.0.1:3000)
           echo "Flask Response: $RESPONSE"
