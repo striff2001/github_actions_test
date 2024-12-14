@@ -28,12 +28,20 @@ jobs:
     - name: Install dependencies
       run: |
         python -m venv venv
-        source venv/bin/activate  # Для Windows используем `venv\Scripts\activate`
+        if [ $RUNNER_OS == 'Windows' ]; then
+          .\venv\Scripts\activate
+        else
+          source venv/bin/activate
+        fi
         pip install -r requirements.txt
 
     - name: Run tests
       run: |
-        source venv/bin/activate  # Для Windows используем `venv\Scripts\activate`
+        if [ $RUNNER_OS == 'Windows' ]; then
+          .\venv\Scripts\activate
+        else
+          source venv/bin/activate
+        fi
         pytest
 
   deploy:
