@@ -28,20 +28,20 @@ jobs:
     - name: Install dependencies
       run: |
         python -m venv venv
-        if [[ $RUNNER_OS == 'Windows' ]]; then
-          .\venv\Scripts\Activate.ps1
-        else
-          source venv/bin/activate
-        fi
+        if ($Env:RUNNER_OS -eq "Windows") {
+          .\venv\Scripts\Activate.ps1  # Для Windows используем PowerShell-активацию
+        } else {
+          source venv/bin/activate  # Для Linux/macOS используем bash активацию
+        }
         pip install -r requirements.txt
 
     - name: Run tests
       run: |
-        if [[ $RUNNER_OS == 'Windows' ]]; then
-          .\venv\Scripts\Activate.ps1
-        else
-          source venv/bin/activate
-        fi
+        if ($Env:RUNNER_OS -eq "Windows") {
+          .\venv\Scripts\Activate.ps1  # Для Windows используем PowerShell-активацию
+        } else {
+          source venv/bin/activate  # Для Linux/macOS используем bash активацию
+        }
         pytest
 
   deploy:
