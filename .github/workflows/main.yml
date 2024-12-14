@@ -10,7 +10,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.9]
 
     steps:
     - name: Checkout code
@@ -19,21 +23,21 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
+        python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
       run: |
         python -m venv venv
-        source venv/bin/activate
+        source venv/bin/activate  # Для Windows используем `venv\Scripts\activate`
         pip install -r requirements.txt
 
     - name: Run tests
       run: |
-        source venv/bin/activate
+        source venv/bin/activate  # Для Windows используем `venv\Scripts\activate`
         pytest
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Деплой будет выполняться только на Ubuntu, так как GitHub Pages поддерживается на Linux.
     needs: build
     if: success()
 
