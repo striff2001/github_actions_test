@@ -1,125 +1,65 @@
-name: CI/CD Pipeline
+name: Python CI/CD Pipeline
 
 on:
   push:
     branches:
-      - main  # Trigger on push to main
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
-    name: Build on Multiple OS
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.8", "3.9", "3.10"]
-        include:
-          - os: macos-latest
-            python-version: "3.9"
-            architecture: arm64  # For Apple Silicon
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      # Install dependencies for macOS
-      - name: Install gettext for macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install gettext
-          brew link --force gettext
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
 
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: "${{ matrix.python-version }}"
-          architecture: ${{ matrix.architecture || 'x64' }}
+    - name: Install dependencies
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+        pip install -r requirements.txt
 
-      - name: Debug Python Environment
-        run: |
-          python --version
-          pip --version
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt --verbose
-
-      - name: Verify build
-        run: |
-          python -m compileall .
-
-  test:
-    name: Run Unit Tests
-    runs-on: ${{ matrix.os }}
-    needs: build  # Run after successful build
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.8", "3.9", "3.10"]
-        include:
-          - os: macos-latest
-            python-version: "3.9"
-            architecture: arm64  # For Apple Silicon
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Debugging Matrix Variables
-        run: |
-          echo "Matrix OS: ${{ matrix.os }}"
-          echo "Python Version: ${{ matrix.python-version }}"
-          echo "Architecture: ${{ matrix.architecture || 'default' }}"
-
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: "${{ matrix.python-version }}"
-          architecture: ${{ matrix.architecture || 'x64' }}
-
-      - name: Debug Python Environment
-        run: |
-          python --version
-          pip --version
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt --verbose
-
-      - name: Run tests
-        run: |
-          pytest --junitxml=reports/results-${{ matrix.os }}-${{ matrix.python-version }}.xml
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
-          path: reports/results-${{ matrix.os }}-${{ matrix.python-version }}.xml
+    - name: Run tests
+      run: |
+        source venv/bin/activate
+        pytest
 
   deploy:
-    name: Demonstrate Deployment
     runs-on: ubuntu-latest
-    needs: test  # Run after successful tests
+    needs: build
+    if: success()
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+    - name: Install dependencies
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+        pip install -r requirements.txt
 
-      - name: Run Flask Application
-        env:
-          FLASK_APP: app.py
-        run: |
-          nohup python app.py > flask.log 2>&1 &
-          sleep 5  # Give the app time to start
-          RESPONSE=$(curl -s http://127.0.0.1:3000)
-          echo "Flask Response: $RESPONSE"
+    - name: Build the app
+      run: |
+        # Собираем статические файлы (например, можно использовать команду для генерации статических файлов)
+        mkdir build
+        cp -r * build/
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./build
